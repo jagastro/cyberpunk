@@ -13,15 +13,12 @@
       background-color: #020b05;
       font-family: monospace;
     }
-    iframe {
-      display: none;
-    }
   </style>
 </head>
 <body>
 
-<!-- For mp3 Audio, looping -->
-<audio id="bg-audio" loop></audio>
+  <!-- Local Audio Player -->
+  <audio id="bg-audio" loop></audio>
 
   <script>
     // Main State Machine:
@@ -210,7 +207,6 @@
           if (serverInjectTimer <= 0) {
             successfulBlocks++;
             netwatchState = 0;
-            controlAudio("playVideo");
           }
           return;
         }
@@ -399,7 +395,6 @@
         } else if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 170 && mouseY <= mY + 210) {
           netwatchState = 4;
           serverInjectTimer = 300;
-          controlAudio("pauseVideo");
         } else if (hasOption4 && mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 220 && mouseY <= mY + 260) {
           netwatchState = 5;
           disintegrationProgress = 0;
@@ -506,7 +501,7 @@
       if (!audio) return;
       
       if (action === "loadStream") {
-        audio.src = "synthwave.mp3"; // Point directly to your uploaded MP3
+        audio.src = "synthwave.mp3";
         audio.play();
       } else if (action === "pauseVideo") {
         audio.pause();
@@ -729,7 +724,7 @@
 
       drawChoiceButton(mX + 20, mY + 70, mWidth - 40, 40, "1) DEPLOY COUNTER-MEASURES", "Aborts trace cleanly", cp_cyan);
       drawChoiceButton(mX + 20, mY + 120, mWidth - 40, 40, "2) REPLICATING WORM REDIRECT", "Aborts trace + ASCII Snake Spread", cp_amber);
-      drawChoiceButton(mX + 20, mY + 170, mWidth - 40, 40, "3) SERVER INJECT ATTACK", "5s Reboot", cp_red);
+      drawChoiceButton(mX + 20, mY + 170, mWidth - 40, 40, "3) SERVER INJECT ATTACK", "5s Reboot: Blackout & Resets Trace", cp_red);
 
       if (hasOption4) {
         drawChoiceButton(mX + 20, mY + 220, mWidth - 40, 40, "4) NETWATCH SYSTEM DISINTEGRATION", "Permanently disables all NetWatch attacks", cp_gold);
@@ -787,18 +782,15 @@
       }
     }
 
-    // --- END SCREEN (State 4): World News Ticker + Interactive CPU ---
     function drawEndScreen() {
       background(5, 2, 8);
 
-      // 1. Render World News Feed Banner Across Top
       drawWorldNewsTicker();
 
       let cx = width / 2;
       let cy = height / 2 + 25;
       let chipSize = 130;
 
-      // Title Text
       fill(cp_red[0], cp_red[1], cp_red[2]);
       noStroke();
       textSize(34);
@@ -860,12 +852,10 @@
       textAlign(LEFT, BASELINE);
     }
 
-    // Real-World Media / Hacker Laptop News Ticker
     function drawWorldNewsTicker() {
       let tickerH = 42;
       let tickerY = 20;
 
-      // Outer Web News Header Bar
       fill(10, 14, 24, 240);
       stroke(220, 30, 60);
       strokeWeight(1);
@@ -875,28 +865,23 @@
       textSize(12);
       let strW = textWidth(fullNewsString);
 
-      // Scroll position update
       newsPos -= 1.8;
       if (newsPos < -strW) {
         newsPos = 0;
       }
 
-      // Continuous Scrolling Wire Text
       fill(240, 240, 255);
       noStroke();
       textAlign(LEFT, CENTER);
       text(fullNewsString, newsPos + 180, tickerY + tickerH / 2);
       text(fullNewsString, newsPos + 180 + strW, tickerY + tickerH / 2);
 
-      // Left Badge Overlay (News Channel Tag)
       fill(210, 15, 45);
       rect(0, tickerY, 175, tickerH);
 
-      // Pulsing Recording / Live Dot
       fill(255, 255, 255, 180 + sin(frameCount * 0.15) * 75);
       ellipse(18, tickerY + tickerH / 2, 8, 8);
 
-      // Badge Text
       fill(255);
       textSize(11);
       textAlign(LEFT, CENTER);
