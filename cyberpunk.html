@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Terminal // Payload Breach</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #020b05;
+      font-family: monospace;
+    }
+    iframe {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hidden YouTube Player -->
+  <iframe id="yt-audio" width="0" height="0" allow="autoplay"></iframe>
+
+  <script>
+    // Main State Machine:
+    // 0 = Green Matrix
+    // 1 = Confirm 1
+    // 2 = Confirm 2
+    // 3 = Breach Gameplay
+    // 4 = Upload Complete Screen
+    // 5 = Server Matrix Cascade View
+    let appState = 0;
+
+    // NetWatch Attack State: 0 = Inactive, 1 = Choice Modal, 2 = Counter-Measures, 3 = Worm Redirect, 4 = Server Inject, 5 = Disintegration
+    let netwatchState = 0;
+    let netwatchProgress = 0;
+    let defenseProgress = 0;
+    let disintegrationProgress = 0;
+    let netwatchTitle = "";
+    
+    // Counter & Final Phase Tracking
+    let successfulBlocks = 0;
+    let netwatchDisabled = false;
+    let finalUploadActive = false;
+    let finalUploadProgress = 0;
+
+    // CEO Chat & Typewriter Engine State
+    let ceoChatState = 0; // 0 = Inactive, 1 = Initial Plea, 2 = Offer Counter
+    let ceoChatTriggered = false;
+    let ceoTargetText = "";
+    let ceoTypedCount = 0;
+    let ceoTypingComplete = false;
+    let ceoTypeSpeed = 2;
+
+    let rollbackActive = false;
+    let rollbackProgress = 0;
+
+    let asciiWormTimer = 0;
+    let serverInjectTimer = 0;
+
+    // World News Ticker State
+    let newsPos = 0;
+    let newsHeadlines = [
+      "BREAKING: GlobaTech HQ confirms total core system collapse; stock ($GLBT) tumbles -94% in after-hours trading",
+      "FAA EMERGENCY ORDER: All commercial air traffic grounded worldwide following global ATC network corruptions",
+      "WALL STREET IN CHAOS: NYSE & NASDAQ suspend all trading indefinitely due to desynchronized ledgers",
+      "POWER GRID FAILURE: Metropolitan blackouts reported across North America, Europe, and Asia",
+      "NETWATCH SILENT: Cyber defense authority fails to respond as payload spreads across 180 countries",
+      "TELECOM DISRUPTION: Over 85% of global tier-1 routing infrastructure unresponsive"
+    ];
+
+    let lines = [];
+    let maxLines = 45;
+    let glitchProbability = 0.05;
+
+    // Matrix Grid Config (10x7 Server Nodes)
+    const gridCols = 10;
+    const gridRows = 7;
+    let cascadeFrame = 0;
+
+    // Palettes
+    let matrix_green = [0, 255, 102];
+    let cp_red = [255, 0, 85];
+    let cp_cyan = [0, 243, 255];
+    let cp_amber = [255, 183, 0];
+    let cp_gold = [255, 215, 0];
+
+    // Text collections
+    let cleanPrefixes = ["[OK] SYS_CHECK:", "[INFO] NET_ROUTE:", "[OK] PORT_8080:", "[INFO] SYNC_STABLE:", "[SECURE] NODE_"];
+    let corruptPrefixes = ["ERR:", "CRITICAL:", "SYS_BREACH:", "MEM_CORRUPT:", "0xFE"];
+    let cleanChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-/";
+    let corruptChars = "ABCDEF0123456789X][><;//$#!@";
+
+    let netwatchAttacks = [
+      "NETWATCH PURGE TRACE DETECTED",
+      "NETWATCH ICE FIREWALL LOCKOUT",
+      "AUTHORITY NODE COUNTER-INTERCEPT"
+    ];
+
+    let loadLabels = [
+      "COMPILING VIRUS PAYLOAD...",
+      "INJECTING MALWARE MATRIX...",
+      "DECRYPTING CORE BUFFER...",
+      "OVERRIDING SECURITY NODES...",
+      "PURGING GLOBAL CACHE..."
+    ];
+
+    let isLoading = false;
+    let loadProgress = 0;
+    let currentLoadLabel = "";
+    let loadSpeed = 2;
+
+    let subOsc;
+    let audioStarted = false;
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      textFont('Courier New');
+      textSize(16);
+
+      for (let i = 0; i < maxLines; i++) {
+        lines.push(generateCleanString());
+      }
+
+      subOsc = new p5.Oscillator('triangle');
+      subOsc.freq(45);
+      subOsc.amp(0);
+      subOsc.start();
+    }
+
+    function draw() {
+      cursor(ARROW);
+
+      // --- STATE 0: PRISTINE GREEN TERMINAL ---
+      if (appState === 0) {
+        background(2, 11, 5, 180);
+        if (frameCount % 5 === 0) {
+          lines.push(generateCleanString());
+          if (lines.length > maxLines) lines.shift();
+        }
+        fill(matrix_green);
+        noStroke();
+        textSize(16);
+        for (let i = 0; i < lines.length; i++) {
+          text(lines[i], 20, i * 20 + 25);
+        }
+        fill(0, 255, 102, 180 + sin(frameCount * 0.1) * 75);
+        text("[ SYSTEM STABLE // CLICK CANVAS TO INITIATE PAYLOAD ]", 20, height - 20);
+      }
+
+      // --- STATE 1: CONFIRMATION MODAL 1 ---
+      else if (appState === 1) {
+        drawFrozenGreenBackground();
+        drawConfirmModal(
+          "[ SECURITY WARNING ]",
+          "Initiate virus upload to central network?",
+          "PAYLOAD: VIRUS_CORRUPT.EXE",
+          "[ CLICK TO CONFIRM UPLOAD ]",
+          cp_amber
+        );
+      }
+
+      // --- STATE 2: FINAL WARNING MODAL 2 ---
+      else if (appState === 2) {
+        drawFrozenGreenBackground();
+        drawConfirmModal(
+          "[ CRITICAL ACTION REQUIRED ]",
+          "Are you ABSOLUTELY SURE?",
+          "THERE IS NO GOING BACK. SYSTEM WILL BE CORRUPTED.",
+          "[ CLICK TO EXECUTE // OVERRIDE ALL ]",
+          cp_red
+        );
+      }
+
+      // --- STATE 3: FULL CYBERPUNK BREACH & GAMEPLAY ---
+      else if (appState === 3) {
+        
+        // Option 3 Server Inject Blackout Mode
+        if (netwatchState === 4) {
+          background(0);
+          serverInjectTimer--;
+          
+          let pct = floor(map(300 - serverInjectTimer, 0, 300, 0, 100));
+          let bw = min(500, width - 40);
+          let bx = (width - bw) / 2;
+          let by = height / 2 - 40;
+
+          fill(matrix_green);
+          noStroke();
+          textSize(14);
+          textAlign(CENTER, CENTER);
+          text("[ SERVER INJECT ATTACK IN PROGRESS ]", width / 2, by - 30);
+          text("BYPASSING NETWATCH CORE // REBOOTING SYSTEM...", width / 2, by - 10);
+
+          noFill();
+          stroke(matrix_green);
+          strokeWeight(1);
+          rect(bx, by + 20, bw, 24);
+
+          fill(matrix_green);
+          noStroke();
+          rect(bx + 2, by + 22, map(pct, 0, 100, 0, bw - 4), 20);
+
+          fill(255);
+          text(pct + "% COMPLETE", width / 2, by + 32);
+          textAlign(LEFT, BASELINE);
+
+          if (serverInjectTimer <= 0) {
+            successfulBlocks++;
+            netwatchState = 0;
+            controlAudio("playVideo");
+          }
+          return;
+        }
+
+        if (netwatchState === 0 && !netwatchDisabled && !finalUploadActive && !isLoading && random() < 0.003) {
+          netwatchState = 1;
+          netwatchProgress = 0;
+          netwatchTitle = random(netwatchAttacks);
+        }
+
+        if (netwatchState === 0 && !isLoading && !finalUploadActive && random() < 0.003) {
+          isLoading = true;
+          loadProgress = 0;
+          loadSpeed = random(1.5, 3.5);
+          currentLoadLabel = random(loadLabels);
+        }
+
+        if (!isLoading && netwatchState !== 1 && ceoChatState === 0) {
+          background(10, 5, 15, 150); 
+          if (frameCount % 4 === 0) {
+            lines.push(generateCorruptString());
+            if (lines.length > maxLines) lines.shift();
+          }
+          subOsc.amp(0, 0.05);
+        } else {
+          background(10, 5, 15);
+
+          if (audioStarted && isLoading) {
+            let pulse = sin(frameCount * 0.4);
+            let targetAmp = pulse > 0 ? 0.6 : 0.05;
+            let currentFreq = map(loadProgress, 0, 100, 40, 65);
+            subOsc.freq(currentFreq, 0.05);
+            subOsc.amp(targetAmp, 0.02);
+          }
+        }
+
+        fill(cp_red);
+        noStroke();
+        textSize(16);
+
+        let xShake = (!isLoading && random() < 0.05) ? random(-6, 6) : 0;
+
+        for (let i = 0; i < lines.length; i++) {
+          let y = i * 20 + 25;
+          let displayText = (isLoading || netwatchState === 1 || ceoChatState > 0) ? lines[i] : randomlyCorrupt(lines[i]);
+          if (random() < 0.02) fill(cp_cyan); else fill(cp_red);
+          text(displayText, 20 + xShake, y);
+        }
+
+        if (!isLoading && netwatchState === 0 && ceoChatState === 0) {
+          triggerGlitchEffects();
+        }
+
+        if (asciiWormTimer > 0) {
+          asciiWormTimer--;
+          triggerAsciiWormSpread();
+        }
+
+        if (isLoading) {
+          drawLoadingModal();
+          loadProgress += loadSpeed;
+          if (loadProgress >= 100) isLoading = false;
+        }
+
+        if (netwatchState > 0 && !netwatchDisabled) {
+          drawNetWatchBar();
+        }
+
+        drawBlockCounterDisplay();
+
+        if (netwatchState === 1) {
+          drawNetWatchChoiceModal();
+        }
+
+        if (netwatchState === 2 || netwatchState === 3) {
+          defenseProgress += 2.5;
+          drawDefenseBar(netwatchState === 2 ? "DEPLOYING COUNTER-MEASURES..." : "DEPLOYING REPLICATING WORM...");
+          
+          if (defenseProgress >= 100) {
+            successfulBlocks++;
+            if (netwatchState === 3) asciiWormTimer = 180;
+            netwatchState = 0;
+          }
+        }
+
+        if (netwatchState === 5) {
+          disintegrationProgress += (100 / (30 * 60));
+          drawDisintegrationBar();
+
+          if (disintegrationProgress >= 100) {
+            netwatchDisabled = true;
+            netwatchState = 0;
+            finalUploadActive = true;
+            finalUploadProgress = 0;
+          }
+        }
+
+        // --- FINAL VIRUS UPLOAD PHASE & REAL-TIME CEO CHAT INTERCEPT AT 92% ---
+        if (finalUploadActive && !rollbackActive) {
+          
+          if (finalUploadProgress >= 92 && !ceoChatTriggered) {
+            finalUploadProgress = 92;
+            ceoChatTriggered = true;
+            triggerCeoDialogue(1);
+          }
+
+          if (ceoChatState === 0) {
+            finalUploadProgress += (100 / (60 * 60));
+          }
+
+          drawFinalUploadBar();
+
+          if (finalUploadProgress >= 100) {
+            appState = 4;
+          }
+        }
+
+        if (ceoChatState > 0) {
+          drawCeoChatModal();
+        }
+
+        if (rollbackActive) {
+          rollbackProgress += (100 / (6 * 60));
+          drawRollbackBar();
+
+          if (rollbackProgress >= 100) {
+            resetSystemToBeginning();
+          }
+        }
+      }
+
+      // --- STATE 4: VIRUS UPLOAD COMPLETE END SCREEN ---
+      else if (appState === 4) {
+        drawEndScreen();
+      }
+
+      // --- STATE 5: SERVER MATRIX CORRUPTION CASCADE SCREEN ---
+      else if (appState === 5) {
+        drawServerMatrixCascade();
+      }
+
+      // Scanlines
+      stroke(0, 0, 0, 50);
+      strokeWeight(1);
+      for (let i = 0; i < height; i += 4) {
+        line(0, i, width, i);
+      }
+    }
+
+    function triggerCeoDialogue(stateNum) {
+      ceoChatState = stateNum;
+      ceoTypedCount = 0;
+      ceoTypingComplete = false;
+
+      if (stateNum === 1) {
+        ceoTargetText = "Please, don't do this--my company will be ruined!\nThink of all the damage this will cause!";
+      } else if (stateNum === 2) {
+        ceoTargetText = "I'll wire $10 million right away if you stop right now.";
+      }
+    }
+
+    // Interactive Click Handler
+    function mousePressed() {
+      if (appState === 0) {
+        appState = 1;
+      } else if (appState === 1) {
+        appState = 2;
+      } else if (appState === 2) {
+        appState = 3;
+        userStartAudio();
+        audioStarted = true;
+        controlAudio("loadStream");
+      } else if (appState === 3 && netwatchState === 1) {
+        let hasOption4 = (successfulBlocks >= 10);
+        let mWidth = min(540, width - 40);
+        let mHeight = hasOption4 ? 300 : 250;
+        let mX = (width - mWidth) / 2;
+        let mY = (height - mHeight) / 2;
+
+        if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 70 && mouseY <= mY + 110) {
+          netwatchState = 2;
+          defenseProgress = 0;
+        } else if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 120 && mouseY <= mY + 160) {
+          netwatchState = 3;
+          defenseProgress = 0;
+        } else if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 170 && mouseY <= mY + 210) {
+          netwatchState = 4;
+          serverInjectTimer = 300;
+          controlAudio("pauseVideo");
+        } else if (hasOption4 && mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 220 && mouseY <= mY + 260) {
+          netwatchState = 5;
+          disintegrationProgress = 0;
+        }
+      }
+      // CEO Chat Intercept Click Handler
+      else if (appState === 3 && ceoChatState > 0) {
+        if (!ceoTypingComplete) {
+          ceoTypedCount = ceoTargetText.length;
+          ceoTypingComplete = true;
+          return;
+        }
+
+        let mWidth = min(560, width - 40);
+        let mHeight = (ceoChatState === 1) ? 270 : 230;
+        let mX = (width - mWidth) / 2;
+        let mY = (height - mHeight) / 2;
+
+        if (ceoChatState === 1) {
+          if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 120 && mouseY <= mY + 160) {
+            ceoChatState = 0;
+          } else if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 165 && mouseY <= mY + 205) {
+            triggerCeoDialogue(2);
+          } else if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 210 && mouseY <= mY + 250) {
+            ceoChatState = 0;
+          }
+        } else if (ceoChatState === 2) {
+          if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 120 && mouseY <= mY + 160) {
+            ceoChatState = 0;
+            rollbackActive = true;
+            rollbackProgress = 0;
+          } else if (mouseX >= mX + 20 && mouseX <= mX + mWidth - 20 && mouseY >= mY + 165 && mouseY <= mY + 205) {
+            ceoChatState = 0;
+          }
+        }
+      }
+      // End Screen (State 4)
+      else if (appState === 4) {
+        let cx = width / 2;
+        let cy = height / 2 + 25;
+        let chipSize = 130;
+
+        if (mouseX >= cx - chipSize/2 - 10 && mouseX <= cx + chipSize/2 + 10 &&
+            mouseY >= cy - chipSize/2 - 10 && mouseY <= cy + chipSize/2 + 10) {
+          cascadeFrame = 0;
+          appState = 5;
+        }
+
+        let rw = 260;
+        let rh = 40;
+        let rx = cx - rw / 2;
+        let ry = height - 65;
+        if (mouseX >= rx && mouseX <= rx + rw && mouseY >= ry && mouseY <= ry + rh) {
+          resetSystemToBeginning();
+        }
+      }
+      // Matrix View (State 5)
+      else if (appState === 5) {
+        if (mouseX >= 20 && mouseX <= 220 && mouseY >= 20 && mouseY <= 60) {
+          appState = 4;
+        }
+        if (mouseX >= width - 240 && mouseX <= width - 20 && mouseY >= 20 && mouseY <= 60) {
+          resetSystemToBeginning();
+        }
+      }
+    }
+
+    function keyPressed() {
+      if ((key === 'n' || key === 'N') && appState === 3 && netwatchState === 0 && !netwatchDisabled && !finalUploadActive) {
+        netwatchState = 1;
+        netwatchProgress = 0;
+        netwatchTitle = random(netwatchAttacks);
+      }
+    }
+
+    function resetSystemToBeginning() {
+      appState = 0;
+      netwatchState = 0;
+      netwatchProgress = 0;
+      defenseProgress = 0;
+      disintegrationProgress = 0;
+      successfulBlocks = 0;
+      netwatchDisabled = false;
+      finalUploadActive = false;
+      finalUploadProgress = 0;
+      ceoChatState = 0;
+      ceoChatTriggered = false;
+      ceoTypedCount = 0;
+      ceoTypingComplete = false;
+      rollbackActive = false;
+      rollbackProgress = 0;
+      asciiWormTimer = 0;
+      serverInjectTimer = 0;
+      isLoading = false;
+      loadProgress = 0;
+      lines = [];
+      for (let i = 0; i < maxLines; i++) {
+        lines.push(generateCleanString());
+      }
+    }
+
+    function controlAudio(action) {
+      let iframe = document.getElementById('yt-audio');
+      if (!iframe) return;
+      if (action === "loadStream") {
+        iframe.src = "https://www.youtube.com/embed/_1x9oFaYDrk?autoplay=1&loop=1&playlist=_1x9oFaYDrk";
+      } else if (action === "pauseVideo") {
+        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      } else if (action === "playVideo") {
+        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      }
+    }
+
+    function drawNetWatchBar() {
+      if (netwatchState === 1) netwatchProgress = min(100, netwatchProgress + 0.3);
+      let barW = min(600, width - 40);
+      let barX = (width - barW) / 2;
+      
+      fill(5, 15, 8, 220);
+      stroke(matrix_green[0], matrix_green[1], matrix_green[2]);
+      strokeWeight(1);
+      rect(barX, 15, barW, 26);
+
+      fill(matrix_green[0], matrix_green[1], matrix_green[2]);
+      noStroke();
+      rect(barX + 2, 17, map(netwatchProgress, 0, 100, 0, barW - 4), 22);
+
+      fill(0);
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text("NETWATCH PURGE TRACE: " + floor(netwatchProgress) + "%", width / 2, 28);
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawBlockCounterDisplay() {
+      fill(netwatchDisabled ? cp_gold[0] : cp_cyan[0], netwatchDisabled ? cp_gold[1] : cp_cyan[1], netwatchDisabled ? cp_gold[2] : cp_cyan[2]);
+      noStroke();
+      textSize(12);
+      textAlign(RIGHT, TOP);
+      if (netwatchDisabled) {
+        text("[ NETWATCH DISINTEGRATED // OFF-LINE ]", width - 20, 20);
+      } else {
+        text("[ BLOCKS: " + successfulBlocks + "/10 ]", width - 20, 20);
+      }
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawDefenseBar(label) {
+      let barW = min(500, width - 40);
+      let barX = (width - barW) / 2;
+      let barY = height - 50;
+
+      fill(10, 5, 15, 230);
+      stroke(cp_cyan[0], cp_cyan[1], cp_cyan[2]);
+      strokeWeight(1);
+      rect(barX, barY, barW, 28);
+
+      fill(cp_cyan[0], cp_cyan[1], cp_cyan[2]);
+      noStroke();
+      rect(barX + 2, barY + 2, map(defenseProgress, 0, 100, 0, barW - 4), 24);
+
+      fill(0);
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text(label + " " + floor(defenseProgress) + "%", width / 2, barY + 15);
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawDisintegrationBar() {
+      let barW = min(540, width - 40);
+      let barX = (width - barW) / 2;
+      let barY = height - 55;
+
+      fill(15, 10, 5, 240);
+      stroke(cp_gold[0], cp_gold[1], cp_gold[2]);
+      strokeWeight(1);
+      rect(barX, barY, barW, 30);
+
+      fill(cp_gold[0], cp_gold[1], cp_gold[2]);
+      noStroke();
+      rect(barX + 2, barY + 2, map(disintegrationProgress, 0, 100, 0, barW - 4), 26);
+
+      fill(0);
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text("NETWATCH DISINTEGRATION IN PROGRESS: " + floor(disintegrationProgress) + "%", width / 2, barY + 16);
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawFinalUploadBar() {
+      let barW = min(580, width - 40);
+      let barX = (width - barW) / 2;
+      let barY = height - 55;
+
+      fill(15, 5, 10, 240);
+      stroke(cp_red[0], cp_red[1], cp_red[2]);
+      strokeWeight(2);
+      rect(barX, barY, barW, 32);
+
+      fill(cp_red[0], cp_red[1], cp_red[2]);
+      noStroke();
+      rect(barX + 2, barY + 2, map(finalUploadProgress, 0, 100, 0, barW - 4), 28);
+
+      fill(255);
+      textSize(13);
+      textAlign(CENTER, CENTER);
+      text("FINAL VIRUS UPLOADING TO GLOBAL NETWORK: " + floor(finalUploadProgress) + "%", width / 2, barY + 17);
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawRollbackBar() {
+      let barW = min(580, width - 40);
+      let barX = (width - barW) / 2;
+      let barY = height - 55;
+
+      fill(5, 15, 8, 240);
+      stroke(matrix_green[0], matrix_green[1], matrix_green[2]);
+      strokeWeight(2);
+      rect(barX, barY, barW, 32);
+
+      fill(matrix_green[0], matrix_green[1], matrix_green[2]);
+      noStroke();
+      rect(barX + 2, barY + 2, map(rollbackProgress, 0, 100, 0, barW - 4), 28);
+
+      fill(0);
+      textSize(13);
+      textAlign(CENTER, CENTER);
+      text("PAYLOAD ABORTED // EXECUTING SYSTEM ROLLBACK: " + floor(rollbackProgress) + "%", width / 2, barY + 17);
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawCeoChatModal() {
+      if (frameCount % ceoTypeSpeed === 0 && ceoTypedCount < ceoTargetText.length) {
+        ceoTypedCount++;
+      }
+      if (ceoTypedCount >= ceoTargetText.length) {
+        ceoTypingComplete = true;
+      }
+
+      let mWidth = min(560, width - 40);
+      let mHeight = (ceoChatState === 1) ? 270 : 230;
+      let mX = (width - mWidth) / 2;
+      let mY = (height - mHeight) / 2;
+
+      fill(0, 0, 0, 220);
+      rect(0, 0, width, height);
+
+      fill(8, 10, 18, 250);
+      stroke(cp_gold[0], cp_gold[1], cp_gold[2]);
+      strokeWeight(2);
+      rect(mX, mY, mWidth, mHeight, 6);
+
+      let avatarX = mX + 30;
+      let avatarY = mY + 32;
+
+      fill(25, 30, 45);
+      stroke(cp_gold[0], cp_gold[1], cp_gold[2]);
+      strokeWeight(1);
+      ellipse(avatarX, avatarY, 34, 34);
+
+      fill(cp_gold[0], cp_gold[1], cp_gold[2]);
+      noStroke();
+      ellipse(avatarX, avatarY - 4, 10, 10);
+      arc(avatarX, avatarY + 12, 20, 14, PI, TWO_PI);
+
+      fill(cp_gold[0], cp_gold[1], cp_gold[2]);
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text("GlobaTech_CEO [DIRECT CHAT INTERCEPT]", avatarX + 25, mY + 18);
+
+      if (!ceoTypingComplete) {
+        fill(0, 243, 255);
+        textSize(10);
+        let dots = ".".repeat((floor(frameCount / 12) % 4));
+        text("TRANSMISSION INCOMING" + dots, avatarX + 25, mY + 36);
+      } else {
+        fill(160, 175, 200);
+        textSize(10);
+        text("WAITING FOR RESPONDER...", avatarX + 25, mY + 36);
+      }
+
+      let displayedText = ceoTargetText.substring(0, ceoTypedCount);
+      let cursorChar = (frameCount % 30 < 15) ? "▌" : " ";
+      
+      fill(255);
+      textSize(12);
+      text('"' + displayedText + cursorChar + '"', mX + 25, mY + 65);
+
+      if (ceoChatState === 1) {
+        drawChoiceButton(mX + 20, mY + 120, mWidth - 40, 40, '1) "This is payback, you deserve this."', "Resumes final virus upload", cp_red);
+        drawChoiceButton(mX + 20, mY + 165, mWidth - 40, 40, '2) "Make me an offer"', "Negotiate payout", cp_gold);
+        drawChoiceButton(mX + 20, mY + 210, mWidth - 40, 40, '3) [Say nothing and continue to load virus]', "Ignore and proceed", cp_cyan);
+      } else if (ceoChatState === 2) {
+        drawChoiceButton(mX + 20, mY + 120, mWidth - 40, 40, '1) Accept $10 Million Wire & Abort Payload', "Rolls back system to clean state", matrix_green);
+        drawChoiceButton(mX + 20, mY + 165, mWidth - 40, 40, '2) "Sorry, not for sale"', "Resumes final virus upload", cp_red);
+      }
+
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawNetWatchChoiceModal() {
+      let hasOption4 = (successfulBlocks >= 10);
+      let mWidth = min(540, width - 40);
+      let mHeight = hasOption4 ? 300 : 250;
+      let mX = (width - mWidth) / 2;
+      let mY = (height - mHeight) / 2;
+
+      fill(0, 0, 0, 210);
+      rect(0, 0, width, height);
+
+      fill(5, 12, 8, 245);
+      stroke(matrix_green[0], matrix_green[1], matrix_green[2]);
+      strokeWeight(2);
+      rect(mX, mY, mWidth, mHeight);
+
+      fill(matrix_green[0], matrix_green[1], matrix_green[2]);
+      noStroke();
+      textSize(14);
+      textAlign(CENTER, TOP);
+      text("! " + netwatchTitle + " !", width / 2, mY + 15);
+      
+      fill(255);
+      textSize(12);
+      text("AUTHORITIES PURGING VIRUS. SELECT COUNTER-ACTION:", width / 2, mY + 40);
+
+      drawChoiceButton(mX + 20, mY + 70, mWidth - 40, 40, "1) DEPLOY COUNTER-MEASURES", "Aborts trace cleanly", cp_cyan);
+      drawChoiceButton(mX + 20, mY + 120, mWidth - 40, 40, "2) REPLICATING WORM REDIRECT", "Aborts trace + ASCII Snake Spread", cp_amber);
+      drawChoiceButton(mX + 20, mY + 170, mWidth - 40, 40, "3) SERVER INJECT ATTACK", "5s Reboot: Pauses Music & Screen", cp_red);
+
+      if (hasOption4) {
+        drawChoiceButton(mX + 20, mY + 220, mWidth - 40, 40, "4) NETWATCH SYSTEM DISINTEGRATION", "Permanently disables all NetWatch attacks", cp_gold);
+      }
+
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawChoiceButton(x, y, w, h, title, sub, colorArr) {
+      let isHover = (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+
+      if (isHover) {
+        cursor(HAND);
+        fill(colorArr[0], colorArr[1], colorArr[2], 90);
+        stroke(255);
+        strokeWeight(2);
+      } else {
+        fill(colorArr[0], colorArr[1], colorArr[2], 30);
+        stroke(colorArr[0], colorArr[1], colorArr[2]);
+        strokeWeight(1);
+      }
+      rect(x, y, w, h);
+
+      fill(isHover ? 255 : colorArr[0], isHover ? 255 : colorArr[1], isHover ? 255 : colorArr[2]);
+      noStroke();
+      textSize(13);
+      textAlign(LEFT, TOP);
+      text(title, x + 15, y + 6);
+
+      fill(isHover ? 220 : 180);
+      textSize(10);
+      text(sub, x + 15, y + 23);
+    }
+
+    function triggerAsciiWormSpread() {
+      let wormSymbols = ["~", "=", "-", ">", "<", ":", "o", "0", "1", "x", "W", "O", "R", "M"];
+      textSize(14);
+      noStroke();
+      
+      let rowCount = 15;
+      for (let i = 0; i < rowCount; i++) {
+        let yPos = floor(map(i, 0, rowCount, 40, height - 60));
+        let xSpeed = (i % 2 === 0 ? 1 : -1) * (12 + (i % 4) * 4);
+        let headX = (frameCount * xSpeed + i * 140) % (width + 600);
+        if (headX < -200) headX += width + 600;
+        
+        let wormBody = ":::===>[WORM_REPLICATING_NODE_0x" + hex(i * 19, 2) + "]<===::: ";
+        for (let j = 0; j < 22; j++) {
+          wormBody += wormSymbols[(frameCount + i + j) % wormSymbols.length];
+        }
+        
+        let col = (i % 2 === 0) ? matrix_green : cp_cyan;
+        fill(col[0], col[1], col[2], 230);
+        text(wormBody, headX - 250, yPos);
+      }
+    }
+
+    // --- END SCREEN (State 4): World News Ticker + Interactive CPU ---
+    function drawEndScreen() {
+      background(5, 2, 8);
+
+      // 1. Render World News Feed Banner Across Top
+      drawWorldNewsTicker();
+
+      let cx = width / 2;
+      let cy = height / 2 + 25;
+      let chipSize = 130;
+
+      // Title Text
+      fill(cp_red[0], cp_red[1], cp_red[2]);
+      noStroke();
+      textSize(34);
+      textAlign(CENTER, CENTER);
+      text("Virus Upload Complete", cx, cy - 145);
+
+      fill(200, 0, 60);
+      textSize(13);
+      text("GLOBAL NETWORK OVERRIDDEN // NODE_0xFE ACTIVE", cx, cy - 100);
+
+      let isCpuHover = (mouseX >= cx - chipSize/2 - 10 && mouseX <= cx + chipSize/2 + 10 &&
+                        mouseY >= cy - chipSize/2 - 10 && mouseY <= cy + chipSize/2 + 10);
+
+      if (isCpuHover) cursor(HAND);
+
+      stroke(isCpuHover ? cp_cyan[0] : cp_red[0], isCpuHover ? cp_cyan[1] : cp_red[1], isCpuHover ? cp_cyan[2] : cp_red[2]);
+      strokeWeight(2);
+      let pinCount = 8;
+      let pinLength = 18;
+      let pinSpacing = chipSize / (pinCount + 1);
+
+      for (let i = 1; i <= pinCount; i++) {
+        let offset = -chipSize / 2 + i * pinSpacing;
+        line(cx + offset, cy - chipSize / 2, cx + offset, cy - chipSize / 2 - pinLength);
+        line(cx + offset, cy + chipSize / 2, cx + offset, cy + chipSize / 2 + pinLength);
+        line(cx - chipSize / 2, cy + offset, cx - chipSize / 2 - pinLength, cy + offset);
+        line(cx + chipSize / 2, cy + offset, cx + chipSize / 2 + pinLength, cy + offset);
+      }
+
+      fill(isCpuHover ? 10 : 18, isCpuHover ? 25 : 4, isCpuHover ? 35 : 8);
+      stroke(isCpuHover ? cp_cyan[0] : cp_red[0], isCpuHover ? cp_cyan[1] : cp_red[1], isCpuHover ? cp_cyan[2] : cp_red[2]);
+      strokeWeight(isCpuHover ? 4 : 3);
+      rect(cx - chipSize / 2, cy - chipSize / 2, chipSize, chipSize, 8);
+
+      fill(isCpuHover ? 5 : 35, isCpuHover ? 45 : 5, isCpuHover ? 55 : 12);
+      stroke(isCpuHover ? cp_cyan[0] : cp_red[0], isCpuHover ? cp_cyan[1] : cp_red[1], isCpuHover ? cp_cyan[2] : cp_red[2]);
+      strokeWeight(1);
+      rect(cx - chipSize * 0.32, cy - chipSize * 0.32, chipSize * 0.64, chipSize * 0.64, 4);
+
+      fill(isCpuHover ? cp_cyan[0] : cp_red[0], isCpuHover ? cp_cyan[1] : cp_red[1], isCpuHover ? cp_cyan[2] : cp_red[2]);
+      noStroke();
+      triangle(cx - chipSize / 2 + 5, cy - chipSize / 2 + 5, cx - chipSize / 2 + 18, cy - chipSize / 2 + 5, cx - chipSize / 2 + 5, cy - chipSize / 2 + 18);
+
+      fill(255);
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text("V-2077", cx, cy - 8);
+      fill(isCpuHover ? cp_cyan[0] : cp_red[0], isCpuHover ? cp_cyan[1] : cp_red[1], isCpuHover ? cp_cyan[2] : cp_red[2]);
+      textSize(10);
+      text("CORE", cx, cy + 10);
+
+      let pulseAlpha = 180 + sin(frameCount * 0.12) * 75;
+      fill(isCpuHover ? cp_cyan[0] : 255, isCpuHover ? cp_cyan[1] : 255, isCpuHover ? cp_cyan[2] : 255, pulseAlpha);
+      textSize(13);
+      text(isCpuHover ? ">>> CLICK TO ENTER SERVER MATRIX MAP <<<" : "[ CLICK CPU CHIP TO ACCESS MATRIX CASCADE ]", cx, cy + 110);
+
+      drawRestartButton(cx - 130, height - 65, 260, 40);
+
+      textAlign(LEFT, BASELINE);
+    }
+
+    // Real-World Media / Hacker Laptop News Ticker
+    function drawWorldNewsTicker() {
+      let tickerH = 42;
+      let tickerY = 20;
+
+      // Outer Web News Header Bar
+      fill(10, 14, 24, 240);
+      stroke(220, 30, 60);
+      strokeWeight(1);
+      rect(0, tickerY, width, tickerH);
+
+      let fullNewsString = newsHeadlines.join("   ///   ") + "   ///   ";
+      textSize(12);
+      let strW = textWidth(fullNewsString);
+
+      // Scroll position update
+      newsPos -= 1.8;
+      if (newsPos < -strW) {
+        newsPos = 0;
+      }
+
+      // Continuous Scrolling Wire Text
+      fill(240, 240, 255);
+      noStroke();
+      textAlign(LEFT, CENTER);
+      text(fullNewsString, newsPos + 180, tickerY + tickerH / 2);
+      text(fullNewsString, newsPos + 180 + strW, tickerY + tickerH / 2);
+
+      // Left Badge Overlay (News Channel Tag)
+      fill(210, 15, 45);
+      rect(0, tickerY, 175, tickerH);
+
+      // Pulsing Recording / Live Dot
+      fill(255, 255, 255, 180 + sin(frameCount * 0.15) * 75);
+      ellipse(18, tickerY + tickerH / 2, 8, 8);
+
+      // Badge Text
+      fill(255);
+      textSize(11);
+      textAlign(LEFT, CENTER);
+      text("WORLD NEWS FEED", 32, tickerY + tickerH / 2 + 1);
+
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawServerMatrixCascade() {
+      background(4, 2, 8);
+      cascadeFrame++;
+
+      fill(cp_red[0], cp_red[1], cp_red[2]);
+      noStroke();
+      textSize(16);
+      textAlign(CENTER, TOP);
+      text("SERVER MATRIX CORE // REAL-TIME CORRUPTION CASCADE", width / 2, 20);
+
+      drawNavButton(20, 20, 200, 40, "← BACK TO SUMMARY", cp_cyan);
+      drawNavButton(width - 240, 20, 220, 40, "↺ RESTART TERMINAL", cp_red);
+
+      let marginX = 60;
+      let startY = 80;
+      let gridW = width - (marginX * 2);
+      let gridH = height - startY - 50;
+
+      let cellW = gridW / gridCols;
+      let cellH = gridH / gridRows;
+
+      for (let r = 0; r < gridRows; r++) {
+        for (let c = 0; c < gridCols; c++) {
+          let x = marginX + c * cellW;
+          let y = startY + r * cellH;
+          
+          let nodeDist = (r + c) * 18;
+          let corruptState = cascadeFrame - nodeDist;
+
+          fill(corruptState > 0 ? 25 : 4, corruptState > 0 ? 5 : 18, corruptState > 0 ? 10 : 8);
+          stroke(corruptState > 0 ? cp_red[0] : matrix_green[0], corruptState > 0 ? cp_red[1] : matrix_green[1], corruptState > 0 ? cp_red[2] : matrix_green[2]);
+          strokeWeight(1);
+          rect(x + 4, y + 4, cellW - 8, cellH - 8, 3);
+
+          fill(corruptState > 0 ? (sin(frameCount * 0.2 + r) > 0 ? cp_red : [100, 0, 20]) : matrix_green);
+          noStroke();
+          ellipse(x + 16, y + 16, 6, 6);
+
+          fill(corruptState > 0 ? cp_red : matrix_green);
+          textSize(10);
+          textAlign(LEFT, TOP);
+          text("SRV-" + hex(r * gridCols + c, 2), x + 28, y + 12);
+
+          textSize(9);
+          if (corruptState > 0) {
+            fill(255, 0, 85, 200);
+            text("INFECTED", x + 12, y + cellH - 24);
+            fill(cp_cyan[0], cp_cyan[1], cp_cyan[2], 160);
+            text("0x" + hex((r * 13 + c * 7 + cascadeFrame) % 255, 2), x + cellW - 40, y + cellH - 24);
+          } else {
+            fill(0, 255, 102, 160);
+            text("ONLINE", x + 12, y + cellH - 24);
+          }
+        }
+      }
+
+      fill(255);
+      textSize(12);
+      textAlign(CENTER, BOTTOM);
+      let totalNodes = gridCols * gridRows;
+      let infectedCount = min(totalNodes, floor(max(0, cascadeFrame / 18)));
+      text("GRID INFECTION: " + infectedCount + " / " + totalNodes + " NODES CORRUPTED", width / 2, height - 15);
+
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawNavButton(x, y, w, h, label, colorArr) {
+      let isHover = (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+      if (isHover) {
+        cursor(HAND);
+        fill(colorArr[0], colorArr[1], colorArr[2], 80);
+        stroke(255);
+        strokeWeight(2);
+      } else {
+        fill(colorArr[0], colorArr[1], colorArr[2], 25);
+        stroke(colorArr[0], colorArr[1], colorArr[2]);
+        strokeWeight(1);
+      }
+      rect(x, y, w, h, 4);
+
+      fill(isHover ? 255 : colorArr[0], isHover ? 255 : colorArr[1], isHover ? 255 : colorArr[2]);
+      noStroke();
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text(label, x + w / 2, y + h / 2);
+    }
+
+    function drawRestartButton(x, y, w, h) {
+      let isHover = (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+      if (isHover) {
+        cursor(HAND);
+        fill(matrix_green[0], matrix_green[1], matrix_green[2], 70);
+        stroke(255);
+        strokeWeight(2);
+      } else {
+        fill(matrix_green[0], matrix_green[1], matrix_green[2], 20);
+        stroke(matrix_green[0], matrix_green[1], matrix_green[2]);
+        strokeWeight(1);
+      }
+      rect(x, y, w, h, 4);
+
+      fill(isHover ? 255 : matrix_green[0], isHover ? 255 : matrix_green[1], isHover ? 255 : matrix_green[2]);
+      noStroke();
+      textSize(12);
+      textAlign(CENTER, CENTER);
+      text("↺ RESTART HACKING PROCESS", x + w / 2, y + h / 2);
+    }
+
+    function drawConfirmModal(header, body1, body2, buttonText, themeColor) {
+      fill(0, 0, 0, 200);
+      rect(0, 0, width, height);
+
+      let mWidth = min(560, width - 40);
+      let mHeight = 180;
+      let mX = (width - mWidth) / 2;
+      let mY = (height - mHeight) / 2;
+
+      fill(5, 10, 8, 240);
+      stroke(themeColor[0], themeColor[1], themeColor[2]);
+      strokeWeight(2);
+      rect(mX, mY, mWidth, mHeight);
+
+      fill(themeColor[0], themeColor[1], themeColor[2]);
+      textSize(16);
+      textAlign(LEFT, TOP);
+      text(header, mX + 25, mY + 20);
+
+      fill(255);
+      textSize(13);
+      text(body1, mX + 25, mY + 55);
+      fill(themeColor[0], themeColor[1], themeColor[2]);
+      text(body2, mX + 25, mY + 80);
+
+      noFill();
+      stroke(themeColor[0], themeColor[1], themeColor[2]);
+      rect(mX + 25, mY + 115, mWidth - 50, 40);
+
+      fill(themeColor[0], themeColor[1], themeColor[2], 40 + sin(frameCount * 0.15) * 30);
+      rect(mX + 25, mY + 115, mWidth - 50, 40);
+
+      fill(255);
+      textSize(13);
+      textAlign(CENTER, CENTER);
+      text(buttonText, mX + mWidth / 2, mY + 135);
+      textAlign(LEFT, BASELINE);
+    }
+
+    function drawFrozenGreenBackground() {
+      background(2, 11, 5);
+      fill(matrix_green[0], matrix_green[1], matrix_green[2], 120);
+      noStroke();
+      textSize(16);
+      for (let i = 0; i < lines.length; i++) {
+        text(lines[i], 20, i * 20 + 25);
+      }
+    }
+
+    function triggerGlitchEffects() {
+      if (random() < glitchProbability * 1.5) {
+        let yStart = random(height);
+        let hSize = random(10, 80);
+        let slice = get(0, yStart, width, hSize);
+        image(slice, random(-35, 35), yStart);
+      }
+      if (random() < 0.08) {
+        let xStart = random(width);
+        fill(random() > 0.5 ? cp_cyan : cp_red);
+        noStroke();
+        rect(xStart, 0, random(2, 18), height);
+      }
+      if (random() < 0.04) {
+        let bx = random(width - 200);
+        let by = random(height - 100);
+        fill(0, 243, 255, 180);
+        rect(bx, by, random(50, 180), random(20, 60));
+        fill(10, 5, 15);
+        textSize(11);
+        text("0xERR_CORRUPT_BUFFER", bx + 5, by + 15);
+      }
+      if (random() < 0.008) {
+        background(cp_cyan[0], cp_cyan[1], cp_cyan[2], 200);
+      }
+    }
+
+    function drawLoadingModal() {
+      let modalWidth = min(520, width - 40);
+      let modalHeight = 110;
+      let modalX = (width - modalWidth) / 2;
+      let modalY = (height - modalHeight) / 2;
+
+      fill(5, 5, 12, 240);
+      stroke(cp_cyan);
+      strokeWeight(2);
+      rect(modalX, modalY, modalWidth, modalHeight);
+
+      fill(cp_cyan);
+      noStroke();
+      triangle(modalX, modalY, modalX + 15, modalY, modalX, modalY + 15);
+
+      fill(cp_cyan);
+      textSize(14);
+      textAlign(LEFT, TOP);
+      text(currentLoadLabel, modalX + 20, modalY + 22);
+      
+      textAlign(RIGHT, TOP);
+      text(floor(min(loadProgress, 100)) + "%", modalX + modalWidth - 20, modalY + 22);
+
+      noFill();
+      stroke(cp_red);
+      strokeWeight(1);
+      let barX = modalX + 20;
+      let barY = modalY + 55;
+      let barW = modalWidth - 40;
+      let barH = 22;
+      rect(barX, barY, barW, barH);
+
+      fill(cp_red);
+      noStroke();
+      let fillW = map(min(loadProgress, 100), 0, 100, 0, barW - 4);
+      rect(barX + 2, barY + 2, fillW, barH - 4);
+
+      textAlign(LEFT, BASELINE);
+    }
+
+    function generateCleanString() {
+      let prefix = random(cleanPrefixes);
+      let body = "";
+      let len = floor(random(20, 45));
+      for (let i = 0; i < len; i++) body += cleanChars.charAt(floor(random(cleanChars.length)));
+      return prefix + body;
+    }
+
+    function generateCorruptString() {
+      let prefix = random(corruptPrefixes);
+      let hexBody = "";
+      let bodyLen = floor(random(15, 50));
+      for (let i = 0; i < bodyLen; i++) hexBody += corruptChars.charAt(floor(random(corruptChars.length)));
+      return prefix + hexBody;
+    }
+
+    function randomlyCorrupt(str) {
+      if (random() > 0.1) return str;
+      let strArray = str.split('');
+      let corruptCount = floor(random(1, 4));
+      for (let i = 0; i < corruptCount; i++) {
+        let index = floor(random(strArray.length));
+        strArray[index] = corruptChars.charAt(floor(random(corruptChars.length)));
+      }
+      return strArray.join('');
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+  </script>
+</body>
+</html>
