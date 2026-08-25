@@ -20,8 +20,8 @@
 </head>
 <body>
 
-  <!-- Hidden YouTube Player -->
-  <iframe id="yt-audio" width="0" height="0" allow="autoplay"></iframe>
+<!-- For mp3 Audio, looping -->
+<audio id="bg-audio" loop></audio>
 
   <script>
     // Main State Machine:
@@ -502,14 +502,16 @@
     }
 
     function controlAudio(action) {
-      let iframe = document.getElementById('yt-audio');
-      if (!iframe) return;
+      let audio = document.getElementById('bg-audio');
+      if (!audio) return;
+      
       if (action === "loadStream") {
-        iframe.src = "https://www.youtube.com/embed/_1x9oFaYDrk?autoplay=1&loop=1&playlist=_1x9oFaYDrk";
+        audio.src = "synthwave.mp3"; // Point directly to your uploaded MP3
+        audio.play();
       } else if (action === "pauseVideo") {
-        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        audio.pause();
       } else if (action === "playVideo") {
-        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        audio.play();
       }
     }
 
@@ -727,7 +729,7 @@
 
       drawChoiceButton(mX + 20, mY + 70, mWidth - 40, 40, "1) DEPLOY COUNTER-MEASURES", "Aborts trace cleanly", cp_cyan);
       drawChoiceButton(mX + 20, mY + 120, mWidth - 40, 40, "2) REPLICATING WORM REDIRECT", "Aborts trace + ASCII Snake Spread", cp_amber);
-      drawChoiceButton(mX + 20, mY + 170, mWidth - 40, 40, "3) SERVER INJECT ATTACK", "5s Reboot: Pauses Music & Screen", cp_red);
+      drawChoiceButton(mX + 20, mY + 170, mWidth - 40, 40, "3) SERVER INJECT ATTACK", "5s Reboot", cp_red);
 
       if (hasOption4) {
         drawChoiceButton(mX + 20, mY + 220, mWidth - 40, 40, "4) NETWATCH SYSTEM DISINTEGRATION", "Permanently disables all NetWatch attacks", cp_gold);
